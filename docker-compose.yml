@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    links:
+      - "db:database"
+    networks:
+      - saw-tier
+    ports:
+      - "8080:8080"
+  db:
+    image: "postgres:14"
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_USER=user"
+      - "POSTGRES_PASSWORD=password"
+      - "POSTGRES_DB=db"
+    networks:
+      - saw-tier
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+networks:
+  saw-tier:
+    driver: bridge
