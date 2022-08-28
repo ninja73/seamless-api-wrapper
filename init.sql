@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS balances
 
 CREATE UNIQUE INDEX balances_player_currency ON balances (player_name, currency);
 
+INSERT INTO balances(player_name, currency, amount, game_id, last_session_id, last_session_alternative_id, free_round_left, created_at, updated_at)
+VALUES ('player1', 'EUR', 10000, 'riot');
+
 CREATE TABLE IF NOT EXISTS transactions
 (
     "id"                     BIGSERIAL NOT NULL PRIMARY KEY,
