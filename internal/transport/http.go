@@ -50,10 +50,10 @@ func (s *HttpServer) Run(ctx context.Context, resolver rpc.Resolver) error {
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctxDone, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
+		if err := srv.Shutdown(ctxDone); err != nil {
 			log.Error(err)
 		}
 	}()

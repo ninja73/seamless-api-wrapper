@@ -1,0 +1,12 @@
+[server]
+address = ":8080"
+read-timeout = "4s"
+write-timeout = "5s"
+
+[postgres]
+host = "db"
+port = 5432
+user = "user"
+password = "password"
+db = "db"
+pool-size = 100

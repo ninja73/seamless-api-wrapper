@@ -24,7 +24,7 @@ func subtract(_ context.Context, data []int) (int, error) {
 
 func TestResolve(t *testing.T) {
 	var srv = NewServer(&TestTransport{})
-	_ = srv.Register("subtract", Handler(subtract))
+	srv.Register("subtract", Handler(subtract))
 
 	jsonObj := `{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}`
 	expected := `{"jsonrpc":"2.0","result":19,"id":1}`
@@ -62,7 +62,7 @@ func subtract2(_ context.Context, data *SubtractData) (int, error) {
 
 func TestResolveNamedParams(t *testing.T) {
 	var srv = NewServer(&TestTransport{})
-	_ = srv.Register("subtract", HandlerWithPointer(subtract2))
+	srv.Register("subtract", HandlerWithPointer(subtract2))
 
 	jsonObj := `{"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 23, "minuend": 42}, "id": 3}`
 	expected := `{"jsonrpc":"2.0","result":19,"id":3}`
@@ -91,7 +91,7 @@ func TestResolveNamedParams(t *testing.T) {
 
 func TestResolveError(t *testing.T) {
 	var srv = NewServer(&TestTransport{})
-	_ = srv.Register("subtract", Handler(subtract))
+	srv.Register("subtract", Handler(subtract))
 
 	jsonObj := `{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]`
 	expected := `{"jsonrpc":"2.0","error":{"code":-32700,"message":"parse error"},"id":null}`
@@ -134,7 +134,7 @@ func TestResolveError(t *testing.T) {
 
 func TestResolveBatch(t *testing.T) {
 	var srv = NewServer(&TestTransport{})
-	_ = srv.Register("subtract", Handler(subtract))
+	srv.Register("subtract", Handler(subtract))
 
 	jsonObj := `[
         {"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},

@@ -1,11 +1,9 @@
 package rpc
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -38,34 +36,34 @@ func (s *server) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) Register(name string, f HandlerFunc) error {
+func (s *server) Register(name string, f HandlerFunc) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	if _, ok := s.method[name]; ok {
-		return errors.New(fmt.Sprintf("method '%s' alredey exists", name))
+		log.Fatal(fmt.Sprintf("method '%s' alredey exists", name))
 	}
 
 	s.method[strings.ToLower(name)] = f
-	return nil
 }
 
 func (s *server) Resolve(ctx context.Context, w io.Writer, r io.Reader) {
 	data := s.reqPool.get()
 	defer s.reqPool.put(data)
 
-	size, err := bufio.NewReader(r).Read(data)
+	buffer := bytes.NewBuffer(data[:0])
+	_, err := io.Copy(buffer, r)
 	if err != nil {
 		writeError(w, nil, err)
 		return
 	}
 
-	data = bytes.TrimLeft(data[:size], " \t\r\n")
+	reqData := bytes.TrimLeft(buffer.Bytes(), " \t\r\n")
 	var response []byte
 	switch {
-	case len(data) > 0 && data[0] == '[':
+	case len(reqData) > 0 && reqData[0] == '[':
 		var batch []*BaseRequest
-		if err := json.Unmarshal(data, &batch); err != nil {
+		if err := json.Unmarshal(reqData, &batch); err != nil {
 			writeError(w, nil, ParseError)
 			return
 		}
@@ -89,9 +87,9 @@ func (s *server) Resolve(ctx context.Context, w io.Writer, r io.Reader) {
 			writeError(w, nil, err)
 			return
 		}
-	case len(data) > 0 && data[0] == '{':
+	case len(reqData) > 0 && reqData[0] == '{':
 		var req BaseRequest
-		if err := json.Unmarshal(data, &req); err != nil {
+		if err := json.Unmarshal(reqData, &req); err != nil {
 			writeError(w, nil, ParseError)
 			return
 		}
@@ -100,6 +98,7 @@ func (s *server) Resolve(ctx context.Context, w io.Writer, r io.Reader) {
 		if !ok {
 			return
 		}
+
 		if response, err = json.Marshal(result); err != nil {
 			writeError(w, nil, err)
 			return

@@ -16,8 +16,9 @@ type Server struct {
 type Postgres struct {
 	Host     string `toml:"host"`
 	Port     int    `toml:"port"`
+	User     string `toml:"user"`
 	Password string `toml:"password"`
-	DB       int    `toml:"db"`
+	DB       string `toml:"db"`
 	PoolSize int    `toml:"pool-size"`
 }
 
