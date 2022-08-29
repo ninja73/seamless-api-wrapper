@@ -22,9 +22,9 @@ func NewSeamlessService(db *sqlx.DB) *SeamlessService {
 func (s *SeamlessService) Balance(ctx context.Context, playerName, currencyCode string) (*model.Balance, error) {
 	var balance model.Balance
 	err := s.db.GetContext(ctx, &balance, `SELECT 
-	    balances.*,
-        currencies.id "currency.id",
-        currencies.code "currency.code"
+		balances.*,
+		currencies.id "currency.id",
+		currencies.code "currency.code"
 	FROM balances 
 	LEFT JOIN currencies ON balances.currency_id = currencies.id 
 	WHERE balances.player_name = $1 AND currencies.code = $2 LIMIT 1`, playerName, currencyCode)
