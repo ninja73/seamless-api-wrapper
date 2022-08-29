@@ -22,9 +22,9 @@ func NewSeamlessService(db *sqlx.DB) *SeamlessService {
 func (s *SeamlessService) Balance(ctx context.Context, playerName, currencyCode string) (*model.Balance, error) {
 	var balance model.Balance
 	err := s.db.GetContext(ctx, &balance, `SELECT 
-    	balances.*,
-    	currencies.id "currency.id",
-    	currencies.code "currency.code"
+	    balances.*,
+        currencies.id "currency.id",
+        currencies.code "currency.code"
 	FROM balances 
 	LEFT JOIN currencies ON balances.currency_id = currencies.id 
 	WHERE balances.player_name = $1 AND currencies.code = $2 LIMIT 1`, playerName, currencyCode)
@@ -60,9 +60,9 @@ func (s *SeamlessService) Transaction(ctx context.Context, playerName, currencyC
 
 	var balance model.Balance
 	err = tx.Get(&balance, `SELECT 
-    	balances.*,
-    	currencies.id "currency.id",
-    	currencies.code "currency.code"
+        balances.*,
+        currencies.id "currency.id",
+        currencies.code "currency.code"
 	FROM balances 
 	LEFT JOIN currencies ON balances.currency_id = currencies.id 
 	WHERE balances.player_name = $1 AND currencies.code = $2 LIMIT 1 
@@ -90,13 +90,13 @@ func (s *SeamlessService) Transaction(ctx context.Context, playerName, currencyC
 	transaction.UpdatedAt = now
 
 	insertTransactionQuery := `INSERT INTO transactions(
-     balance_id,  withdraw, deposit, game_id, transaction_ref,
-     source, reason, session_id, session_alternative_id,
-     bonus_id, charge_free_rounds, created_at, updated_at
+        balance_id,  withdraw, deposit, game_id, transaction_ref,
+        source, reason, session_id, session_alternative_id,
+        bonus_id, charge_free_rounds, created_at, updated_at
     ) VALUES (
-	 :balance_id, :withdraw, :deposit, :game_id, :transaction_ref,
-	 :source, :reason, :session_id, :session_alternative_id,
-	 :bonus_id, :charge_free_rounds, :created_at, :updated_at
+        :balance_id, :withdraw, :deposit, :game_id, :transaction_ref,
+        :source, :reason, :session_id, :session_alternative_id,
+        :bonus_id, :charge_free_rounds, :created_at, :updated_at
 	) RETURNING id`
 
 	query, args, err := tx.BindNamed(insertTransactionQuery, transaction)
@@ -153,8 +153,8 @@ func (s *SeamlessService) Rollback(ctx context.Context, playerName string, trans
         balance_id, withdraw, deposit, game_id, transaction_ref, 
         session_id, session_alternative_id, is_rollback, created_at, updated_at) 
 	VALUES (
-	 :balance_id, :withdraw, :deposit, :game_id, :transaction_ref,
-	 :session_id, :session_alternative_id, :is_rollback, :created_at, :updated_at
+        :balance_id, :withdraw, :deposit, :game_id, :transaction_ref,
+        :session_id, :session_alternative_id, :is_rollback, :created_at, :updated_at
 	) 
 	ON CONFLICT(transaction_ref) 
 	DO UPDATE SET game_id=EXCLUDED.game_id  
@@ -180,9 +180,9 @@ func (s *SeamlessService) Rollback(ctx context.Context, playerName string, trans
 	}
 
 	_, err = tx.Exec(`UPDATE balances 
-			SET amount = amount + $1 - $2, 
-			    free_round_left = coalesce(free_round_left, 0) + coalesce($3, 0) 
-			WHERE player_name = $4`,
+            SET amount = amount + $1 - $2, 
+                free_round_left = coalesce(free_round_left, 0) + coalesce($3, 0) 
+            WHERE player_name = $4`,
 		transaction.Withdraw, transaction.Deposit, transaction.ChargeFreeRounds, playerName)
 	if err != nil {
 		tx.Rollback()
