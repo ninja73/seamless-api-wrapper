@@ -124,10 +124,7 @@ func (s *server) singleReader(ctx context.Context, req *BaseRequest) (*BaseRespo
 
 	result, err := h(ctx, req.Params)
 	if err != nil {
-		return errorResponse(req.Id, &Error{
-			Code:    ServerErrorCode,
-			Message: err.Error(),
-		}), true
+		return errorResponse(req.Id, err), true
 	}
 
 	if len(req.Id) == 0 {
