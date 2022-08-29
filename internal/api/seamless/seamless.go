@@ -5,9 +5,12 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"seamless-api-wrapper/internal/model"
+	"seamless-api-wrapper/internal/rpc"
 	"seamless-api-wrapper/internal/service"
+	"seamless-api-wrapper/internal/validate"
 	"seamless-api-wrapper/package/dto"
 	"strconv"
+	"time"
 )
 
 type Seamless struct {
@@ -19,10 +22,20 @@ func NewSeamless(seamlessService service.SeamlessService) *Seamless {
 }
 
 func (s *Seamless) GetBalance(ctx context.Context, req *dto.GetBalanceReq) (*dto.GetBalanceResp, error) {
+	if err := validate.Req(req); err != nil {
+		return nil, rpc.InvalidParamsError
+	}
+
 	balance, err := s.seamlessService.Balance(ctx, req.PlayerName, req.Currency)
 	if err != nil {
+		switch err {
+		case service.ErrNotEnoughMoneyCode:
+			return nil, &rpc.Error{Code: 1, Message: err.Error()}
+		case service.ErrIllegalCurrencyCode:
+			return nil, &rpc.Error{Code: 2, Message: err.Error()}
+		}
 		log.Error(err)
-		return nil, errors.New("fail get balance")
+		return nil, &rpc.Error{Code: rpc.ServerErrorCode, Message: "fail get balance"}
 	}
 
 	resp := new(dto.GetBalanceResp)
@@ -34,6 +47,10 @@ func (s *Seamless) GetBalance(ctx context.Context, req *dto.GetBalanceReq) (*dto
 }
 
 func (s *Seamless) WithdrawAndDeposit(ctx context.Context, req *dto.WithdrawAndDepositReq) (*dto.WithdrawAndDepositResp, error) {
+	if err := validate.Req(req); err != nil {
+		return nil, rpc.InvalidParamsError
+	}
+
 	transaction := model.Transaction{
 		Withdraw:             req.Withdraw,
 		Deposit:              req.Deposit,
@@ -46,9 +63,25 @@ func (s *Seamless) WithdrawAndDeposit(ctx context.Context, req *dto.WithdrawAndD
 		BonusId:              req.BonusId,
 		ChargeFreeRounds:     req.ChargeFreeRounds,
 	}
+
 	newBalance, err := s.seamlessService.Transaction(ctx, req.PlayerName, req.Currency, &transaction)
 	if err != nil {
-
+		switch {
+		case errors.Is(err, service.ErrNotEnoughMoneyCode):
+			return nil, &rpc.Error{Code: 1, Message: err.Error()}
+		case errors.Is(err, service.ErrIllegalCurrencyCode):
+			return nil, &rpc.Error{Code: 2, Message: err.Error()}
+		case errors.Is(err, service.ErrNegativeDepositCode):
+			return nil, &rpc.Error{Code: 3, Message: err.Error()}
+		case errors.Is(err, service.ErrNegativeWithdrawalCode):
+			return nil, &rpc.Error{Code: 4, Message: err.Error()}
+		case errors.Is(err, service.ErrSpendingBudgetExceeded):
+			return nil, &rpc.Error{Code: 5, Message: err.Error()}
+		case errors.Is(err, service.ErrTransactionRollback):
+			return nil, &rpc.Error{Code: 6, Message: err.Error()}
+		}
+		log.Error(err)
+		return nil, &rpc.Error{Code: rpc.ServerErrorCode, Message: "fail transaction"}
 	}
 
 	resp := new(dto.WithdrawAndDepositResp)
@@ -62,6 +95,28 @@ func (s *Seamless) WithdrawAndDeposit(ctx context.Context, req *dto.WithdrawAndD
 
 type Empty struct{}
 
-func (s *Seamless) RollbackTransaction(_ context.Context, _ *dto.RollbackTransactionReq) (*Empty, error) {
+func (s *Seamless) RollbackTransaction(ctx context.Context, req *dto.RollbackTransactionReq) (*Empty, error) {
+	if err := validate.Req(req); err != nil {
+		return nil, rpc.InvalidParamsError
+	}
+
+	now := time.Now()
+	transactions := model.Transaction{
+		TransactionRef:       req.TransactionRef,
+		GameID:               req.GameId,
+		GameRoundRef:         req.GameRoundRef,
+		SessionId:            req.SessionId,
+		SessionAlternativeId: req.SessionAlternativeId,
+		IsRollback:           true,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+
+	err := s.seamlessService.Rollback(ctx, req.PlayerName, &transactions)
+	if err != nil {
+		log.Error(err)
+		return nil, &rpc.Error{Code: rpc.ServerErrorCode, Message: "fail rollback"}
+	}
+
 	return &Empty{}, nil
 }
