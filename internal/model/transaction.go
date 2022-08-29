@@ -8,6 +8,7 @@ type Transaction struct {
 	Withdraw             int
 	Deposit              int
 	TransactionRef       string  `db:"transaction_ref"`
+	GameID               *string `db:"game_id"`
 	GameRoundRef         *string `db:"game_round_ref"`
 	Source               *string
 	Reason               *string
@@ -15,6 +16,7 @@ type Transaction struct {
 	SessionAlternativeId *string   `db:"session_alternative_id"`
 	BonusId              *string   `db:"bonus_id"`
 	ChargeFreeRounds     *int      `db:"charge_free_rounds"`
+	IsRollback           bool      `db:"is_rollback"`
 	CreatedAt            time.Time `db:"created_at"`
 	UpdatedAt            time.Time `db:"updated_at"`
 }
