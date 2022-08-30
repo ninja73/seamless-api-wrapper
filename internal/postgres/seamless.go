@@ -149,6 +149,12 @@ func (s *SeamlessService) Rollback(ctx context.Context, playerName string, trans
 		return err
 	}
 
+	err = tx.Get(&transaction.BalanceID, "SELECT id FROM balances WHERE player_name = $1 LIMIT 1", playerName)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	query, args, err := tx.BindNamed(`INSERT INTO transactions(
 		balance_id, withdraw, deposit, game_id, transaction_ref, 
 		session_id, session_alternative_id, is_rollback, created_at, updated_at) 
