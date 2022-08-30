@@ -12,6 +12,7 @@ services:
       - saw-tier
     ports:
       - "8080:8080"
+    restart: on-failure
   db:
     image: "postgres:14"
     ports:

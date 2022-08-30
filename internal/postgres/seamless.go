@@ -115,6 +115,15 @@ func (s *SeamlessService) Transaction(ctx context.Context, playerName, currencyC
 		return nil, err
 	}
 
+	if transaction.SpinDetails != nil {
+		transaction.SpinDetails.TransactionID = transaction.ID
+		_, err := tx.NamedExec("INSERT INTO spin_details(transaction_id, bet_type, win_type) VALUES (:transaction_id, :bet_type, :win_type)", transaction.SpinDetails)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
 	balance.Amount -= transaction.Withdraw
 	if balance.Amount < 0 {
 		tx.Rollback()

@@ -64,6 +64,13 @@ func (s *Seamless) WithdrawAndDeposit(ctx context.Context, req *dto.WithdrawAndD
 		ChargeFreeRounds:     req.ChargeFreeRounds,
 	}
 
+	if req.SpinDetails != nil {
+		transaction.SpinDetails = &model.SpinDetails{
+			BetType: req.SpinDetails.BetType,
+			WinType: req.SpinDetails.WinType,
+		}
+	}
+
 	newBalance, err := s.seamlessService.Transaction(ctx, req.PlayerName, req.Currency, &transaction)
 	if err != nil {
 		switch {
